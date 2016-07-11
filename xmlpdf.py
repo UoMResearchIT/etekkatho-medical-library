@@ -5,20 +5,29 @@ import sys
 import os
 import gzip
 import xml.etree.ElementTree as ET
+import urllib.request
 
 # Main class
 class XMLPDF():
 	'Convert compress xml files into PDF articles'
 	
 	# Vars
-	#rootdir = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/oa/SectionisedData/v.12.2013/"
 	rootdir = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/toprocess/"
 	output = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/output/"
-	csvpath = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/csv/"
+	csvpath = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/csv/metadata.csv"
 	
 	def __init__(self):
+		if os.path.exists(self.csvpath):
+			os.remove(self.csvpath)
+		
 		self.processFiles()
 			
+	def threadPool(self):		
+		pool = ThreadPool(8)
+		results = pool.map(self.processFiles, os.listdir(self.path))
+		pool.close()
+		pool.join()
+	
 	def processFiles(self):
 		print('Processing files...')
 		
@@ -35,20 +44,59 @@ class XMLPDF():
 						# Parse XML
 						root = ET.fromstring(file_content)
 						for child in root:
-							print(child.attrib['article-type'])
+							singleFile = 'PMC'+child[0][1][0].text+'.pdf'
+							singleName = 'PMC'+child[0][1][0].text
 							
-							# Save as PDF
+							'''
+								↓ TODO: THIS BIT SHOULD BE MULTITHREADING ↓ 
+							'''
 							
+							self.saveFile(singleName, singleFile, child)
 								
-							# Save id, title and other metadata to CSV file
-							metadata = {
-								'id': 
-								'type': child.attrib['article-type']
-							}
-							self.updateCSV(metadata)
+	def saveFile(self, singleName, singleFile, child):
+		# Download and save PDF
+		response = urllib.request.urlretrieve('http://europepmc.org/backend/ptpmcrender.fcgi?accid='+singleName+'&blobtype=pdf', self.output+singleFile)
+		
+		# Save metadata to CSV file
+		# First check the metadata exists, add it if it does
+		
+		'''
+			↓  TODO: ERROR HANDLING FOR NON-EXISTENT NODES/ DATA ↓ 
+		'''
+		
+		issnppub = (child[0][0][2].text if child[0][0][2].text else 'n/a')
+		issnepub = (child[0][0][3].text if child[0][0][3].text else 'n/a')
+		pubname = (child[0][0][4][0].text if child[0][0][4][0].text else 'n/a')
+		publoc = (child[0][0][4][1].text if child[0][0][4][1].text else 'n/a')
+		
+		'''
+			↓  TODO: COMPLETE THE FULL LIST OF JOURNAL AND ARTICLE METADATA ↓ 
+		'''
+		
+		metadata = {
+			'filename': singleName,
+			'journal-id-type': child[0][0][0].attrib['journal-id-type'],
+			'journal-id': child[0][0][0].text,
+			'type': child.attrib['article-type'],
+			'journal-title': child[0][0][1].text,
+			'issn-ppub': issnppub,
+			'issn-epub': issnepub,
+			'publisher-name': pubname,
+			'publisher-location': publoc
+		}
+		self.updateCSV(metadata)
 	
 	def updateCSV(self, metadata):
-		pass
-	
+		# Write the data to the CSV file. This will be used to populate a database
+		print(metadata)
+		
+		outfile = open(self.csvpath, 'a')
+		csvLine = ''
+		for key, value in metadata.items():
+			csvLine += value+', '
+			
+		csvLine += '\n'
+		outfile.write(csvLine)
+    	
 
 XMLPDF()
