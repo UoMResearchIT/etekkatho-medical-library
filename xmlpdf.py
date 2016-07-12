@@ -9,7 +9,7 @@ import urllib.request
 
 # Main class
 class XMLPDF():
-	'Convert compress xml files into PDF articles'
+	'Convert compress XML files into PDF articles'
 	
 	# Vars
 	rootdir = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/toprocess/"
@@ -21,12 +21,6 @@ class XMLPDF():
 			os.remove(self.csvpath)
 		
 		self.processFiles()
-			
-	def threadPool(self):		
-		pool = ThreadPool(8)
-		results = pool.map(self.processFiles, os.listdir(self.path))
-		pool.close()
-		pool.join()
 	
 	def processFiles(self):
 		print('Processing files...')
@@ -48,7 +42,7 @@ class XMLPDF():
 							singleName = 'PMC'+child[0][1][0].text
 							
 							'''
-								↓ TODO: THIS BIT SHOULD BE MULTITHREADING ↓ 
+								↓ TODO: THIS BIT SHOULD BE MULTITHREADED ↓ 
 							'''
 							
 							self.saveFile(singleName, singleFile, child)
@@ -61,16 +55,41 @@ class XMLPDF():
 		# First check the metadata exists, add it if it does
 		
 		'''
-			↓  TODO: ERROR HANDLING FOR NON-EXISTENT NODES/ DATA ↓ 
+			↓  TODO: ERROR HANDLING FOR NON-EXISTENT NODES / DATA ↓ 
 		'''
 		
-		issnppub = (child[0][0][2].text if child[0][0][2].text else 'n/a')
-		issnepub = (child[0][0][3].text if child[0][0][3].text else 'n/a')
-		pubname = (child[0][0][4][0].text if child[0][0][4][0].text else 'n/a')
-		publoc = (child[0][0][4][1].text if child[0][0][4][1].text else 'n/a')
+		issnppub = ''
+		issnepub = ''
+		pubname = ''
+		publoc = ''
+		
+		try:
+			issnppub = child[0][0][2].text
+		except IndexError:
+			issnppub = 'n/a'
+		
+		try:
+			issnepub = child[0][0][3].text
+		except IndexError:
+			issnepub = 'n/a'
+		
+		try:
+			pubname = child[0][0][4][0].text
+		except IndexError:
+			pubname = 'n/a'
+		
+		try:
+			publoc = child[0][0][4][1].text
+		except IndexError:
+			publoc = 'n/a'
+			
+		try:
+			firstAuthor = child[0][1][5][0][0][0].text
+		except IndexError:
+			firstAuthor = 'n/a'
 		
 		'''
-			↓  TODO: COMPLETE THE FULL LIST OF JOURNAL AND ARTICLE METADATA ↓ 
+			↓  TODO: COMPLETE THE FULL LIST OF JOURNAL AND ARTICLE METADATA. SWITCH TO DOM PARSING FROM ARRAY KEYS ↓ 
 		'''
 		
 		metadata = {
@@ -82,7 +101,10 @@ class XMLPDF():
 			'issn-ppub': issnppub,
 			'issn-epub': issnepub,
 			'publisher-name': pubname,
-			'publisher-location': publoc
+			'publisher-location': publoc,
+			'article-id': child[0][1][0].text,
+			'article-title': child[0][1][4][0].text,
+			'first-author': firstAuthor
 		}
 		self.updateCSV(metadata)
 	
@@ -93,7 +115,10 @@ class XMLPDF():
 		outfile = open(self.csvpath, 'a')
 		csvLine = ''
 		for key, value in metadata.items():
-			csvLine += value+', '
+			if value:
+				csvLine += '"'+value+'", '
+			else:
+				csvLine += '"", '
 			
 		csvLine += '\n'
 		outfile.write(csvLine)
