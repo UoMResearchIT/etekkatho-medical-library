@@ -5,6 +5,7 @@ import sys
 import os
 import gzip
 import xml.etree.ElementTree as ET
+from bs4 import BeautifulSoup
 import urllib.request
 
 # Main class
@@ -38,90 +39,128 @@ class XMLPDF():
 						# Parse XML
 						root = ET.fromstring(file_content)
 						for child in root:
-							singleFile = 'PMC'+child[0][1][0].text+'.pdf'
-							singleName = 'PMC'+child[0][1][0].text
+							article = BeautifulSoup(ET.tostring(child), 'lxml')
+							pmcid = 'PMC'+article.find("article-id", {"pub-id-type" : "pmcid"}).getText()
+							
+							print('Parsing article ID: ', pmcid)
 							
 							'''
 								↓ TODO: THIS BIT SHOULD BE MULTITHREADED ↓ 
 							'''
 							
-							self.saveFile(singleName, singleFile, child)
+							self.saveFile(pmcid, article)
 								
-	def saveFile(self, singleName, singleFile, child):
+	def saveFile(self, pmcid, article):
 		# Download and save PDF
-		response = urllib.request.urlretrieve('http://europepmc.org/backend/ptpmcrender.fcgi?accid='+singleName+'&blobtype=pdf', self.output+singleFile)
+		response = urllib.request.urlretrieve('http://europepmc.org/backend/ptpmcrender.fcgi?accid='+pmcid+'&blobtype=pdf', self.output+singleFile)
+		
+		# Get the metadata
+		metadata = self.getMetadata(article, pmcid)
 		
 		# Save metadata to CSV file
-		# First check the metadata exists, add it if it does
-		
-		'''
-			↓  TODO: ERROR HANDLING FOR NON-EXISTENT NODES / DATA ↓ 
-		'''
-		
-		issnppub = ''
-		issnepub = ''
-		pubname = ''
-		publoc = ''
-		
+		self.updateCSV(metadata)
+	
+	def getMetadata(self, article, pmcid):
 		try:
-			issnppub = child[0][0][2].text
-		except IndexError:
+			issnppub = article.find("issn", {"pub-type" : "ppub"}).getText()
+		except AttributeError:
 			issnppub = 'n/a'
-		
+			
 		try:
-			issnepub = child[0][0][3].text
-		except IndexError:
+			issnepub = article.find("issn", {"pub-type" : "epub"}).getText()
+		except AttributeError:
 			issnepub = 'n/a'
 		
 		try:
-			pubname = child[0][0][4][0].text
-		except IndexError:
+			pubname = article.find("publisher-name").getText()
+		except AttributeError:
 			pubname = 'n/a'
-		
-		try:
-			publoc = child[0][0][4][1].text
-		except IndexError:
-			publoc = 'n/a'
 			
 		try:
-			firstAuthor = child[0][1][5][0][0][0].text
-		except IndexError:
-			firstAuthor = 'n/a'
+			publoc = article.find("publisher-loc").getText()
+		except AttributeError:
+			publoc = 'n/a'	
+
+		try:
+			journalTitle = article.find("journal-title").getText()
+		except AttributeError:
+			journalTitle = 'n/a'	
+
+		try:
+			journalID = article.find("journal-id").getText()
+		except AttributeError:
+			journalID = 'n/a'
 		
-		'''
-			↓  TODO: COMPLETE THE FULL LIST OF JOURNAL AND ARTICLE METADATA. SWITCH TO DOM PARSING FROM ARRAY KEYS ↓ 
-		'''
+		try:
+			jidt = article.find("journal-id", {"journal-id-type" : True})
+			journalIDType = jidt["journal-id-type"]
+		except AttributeError:
+			jidt = 'n/a'
+			
+		try:
+			artype = article.find("article", {"article-type" : True})
+			articleType = artype["article-type"]
+		except AttributeError:
+			articleType = 'n/a'
+
+		try:
+			articleTitle = article.find("article-title").getText()
+		except AttributeError:
+			articleTitle = 'n/a'
+		
+		try:
+			authors = ''
+			
+			for author in article.findAll("surname"):
+				authors += author.text+', '
+				author.next_sibling	
+		except AttributeError:
+			authors = 'n/a'
+		
+		try:
+			affiliation = ''
+			
+			for aff in article.findAll("aff"):
+				affiliation += aff.text+', '
+				aff.next_sibling	
+		except AttributeError:
+			affiliation = 'n/a'
+		
+		singleFile = pmcid+'.pdf'
 		
 		metadata = {
-			'filename': singleName,
-			'journal-id-type': child[0][0][0].attrib['journal-id-type'],
-			'journal-id': child[0][0][0].text,
-			'type': child.attrib['article-type'],
-			'journal-title': child[0][0][1].text,
+			'pmcid': pmcid,
+			'filename': singleFile,
+			'journal-id-type': journalIDType,
+			'journal-id': journalID,
+			'article-type': articleType,
+			'journal-title': journalTitle,
 			'issn-ppub': issnppub,
 			'issn-epub': issnepub,
 			'publisher-name': pubname,
 			'publisher-location': publoc,
-			'article-id': child[0][1][0].text,
-			'article-title': child[0][1][4][0].text,
-			'first-author': firstAuthor
+			'article-title': articleTitle,
+			'authors': authors,
+			'affiliation': affiliation
 		}
-		self.updateCSV(metadata)
+		
+		return metadata
 	
 	def updateCSV(self, metadata):
 		# Write the data to the CSV file. This will be used to populate a database
-		print(metadata)
+		print('Writing data for id: ', metadata['pmcid'])
 		
 		outfile = open(self.csvpath, 'a')
 		csvLine = ''
 		for key, value in metadata.items():
+			print('Adding:', key, value)
+		
 			if value:
 				csvLine += '"'+value+'", '
 			else:
 				csvLine += '"", '
 			
 		csvLine += '\n'
-		outfile.write(csvLine)
-    	
+		outfile.write(csvLine)	
 
 XMLPDF()
