@@ -7,6 +7,7 @@ import gzip
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 import urllib.request
+from multiprocessing.pool import ThreadPool as Pool
 
 # Main class
 class XMLPDF():
@@ -16,15 +17,23 @@ class XMLPDF():
 	rootdir = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/toprocess/"
 	output = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/output/"
 	csvpath = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/csv/metadata.csv"
+	errorpath = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/errors/errors.txt"
 	
 	def __init__(self):
 		if os.path.exists(self.csvpath):
 			os.remove(self.csvpath)
+			
+		if os.path.exists(self.errorpath):
+			os.remove(self.errorpath)
 		
 		self.processFiles()
 	
 	def processFiles(self):
 		print('Processing files...')
+		
+		pool_size = 300
+		pool = Pool(pool_size)
+		i = 0
 		
 		# Loop through files
 		for subdir, dirs, files in os.walk(self.rootdir):
@@ -33,6 +42,7 @@ class XMLPDF():
 				if file.endswith('.gz'):
 					filepath = os.path.join(subdir, file)
 					print('Unzipping: ', file)
+					
 					with gzip.open(filepath, 'rb') as f:
 						file_content = f.read()
     					
@@ -42,23 +52,41 @@ class XMLPDF():
 							article = BeautifulSoup(ET.tostring(child), 'lxml')
 							pmcid = 'PMC'+article.find("article-id", {"pub-id-type" : "pmcid"}).getText()
 							
-							print('Parsing article ID: ', pmcid)
+							#print('Parsing article ID: ', pmcid)
+							i = i+1
 							
-							'''
-								↓ TODO: THIS BIT SHOULD BE MULTITHREADED ↓ 
-							'''
-							
-							self.saveFile(pmcid, article)
+							# Save the data, use multiple threads
+							try:	
+								pool.apply_async(self.saveFile, (pmcid, article, i,))
+							except ValueError:
+								print('Restarting pool... (1)')
+								pool = Pool(pool_size)
+								pool.apply_async(self.saveFile, (pmcid, article, i,))
+						
+						try:	
+							pool.close()
+							pool.join()
+						except ValueError:
+							print('Restarting pool... (2)')
+							pool = Pool(pool_size)
+							pool.close()
+							pool.join()
 								
-	def saveFile(self, pmcid, article):
+	def saveFile(self, pmcid, article, i):
 		# Download and save PDF
-		response = urllib.request.urlretrieve('http://europepmc.org/backend/ptpmcrender.fcgi?accid='+pmcid+'&blobtype=pdf', self.output+singleFile)
+		singleFile = pmcid+'.pdf'
 		
+		try:
+			response = urllib.request.urlretrieve('http://europepmc.org/backend/ptpmcrender.fcgi?accid='+pmcid+'&blobtype=pdf', self.output+singleFile)
+		except urllib.error.HTTPError:
+			errorfile = open(self.errorpath, 'a')
+			errorfile.write(pmcid+'\n')	
+			
 		# Get the metadata
 		metadata = self.getMetadata(article, pmcid)
 		
 		# Save metadata to CSV file
-		self.updateCSV(metadata)
+		self.updateCSV(metadata, i)
 	
 	def getMetadata(self, article, pmcid):
 		try:
@@ -146,15 +174,15 @@ class XMLPDF():
 		
 		return metadata
 	
-	def updateCSV(self, metadata):
+	def updateCSV(self, metadata, i):
 		# Write the data to the CSV file. This will be used to populate a database
-		print('Writing data for id: ', metadata['pmcid'])
+		print('Writing data for entry number:', i)
 		
 		outfile = open(self.csvpath, 'a')
 		csvLine = ''
 		for key, value in metadata.items():
-			print('Adding:', key, value)
-		
+			#print('Adding:', key, value)
+			
 			if value:
 				csvLine += '"'+value+'", '
 			else:
