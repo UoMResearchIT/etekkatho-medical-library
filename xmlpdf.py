@@ -11,7 +11,7 @@ from multiprocessing.pool import ThreadPool as Pool
 
 # Main class
 class XMLPDF():
-	'Convert compress XML files into PDF articles'
+	'Generate a CSV file of metadata for 1.4 million medical articles, and download the corresponding PDFs'
 	
 	# Vars
 	rootdir = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/toprocess/"
@@ -37,40 +37,32 @@ class XMLPDF():
 		
 		# Loop through files
 		for subdir, dirs, files in os.walk(self.rootdir):
-			for file in files:
-				# Decompress file
-				if file.endswith('.gz'):
-					filepath = os.path.join(subdir, file)
-					print('Unzipping: ', file)
+			for file in files:	
+				# Parse XML
+				root = ET.fromstring(file_content)
+				for child in root:
+					article = BeautifulSoup(ET.tostring(child), 'lxml')
+					pmcid = 'PMC'+article.find("article-id", {"pub-id-type" : "pmcid"}).getText()
 					
-					with gzip.open(filepath, 'rb') as f:
-						file_content = f.read()
-    					
-						# Parse XML
-						root = ET.fromstring(file_content)
-						for child in root:
-							article = BeautifulSoup(ET.tostring(child), 'lxml')
-							pmcid = 'PMC'+article.find("article-id", {"pub-id-type" : "pmcid"}).getText()
-							
-							#print('Parsing article ID: ', pmcid)
-							i = i+1
-							
-							# Save the data, use multiple threads
-							try:	
-								pool.apply_async(self.saveFile, (pmcid, article, i,))
-							except ValueError:
-								print('Restarting pool... (1)')
-								pool = Pool(pool_size)
-								pool.apply_async(self.saveFile, (pmcid, article, i,))
-						
-						try:	
-							pool.close()
-							pool.join()
-						except ValueError:
-							print('Restarting pool... (2)')
-							pool = Pool(pool_size)
-							pool.close()
-							pool.join()
+					#print('Parsing article ID: ', pmcid)
+					i = i+1
+					
+					# Save the data, use multiple threads
+					try:	
+						pool.apply_async(self.saveFile, (pmcid, article, i,))
+					except ValueError:
+						print('Restarting pool... (1)')
+						pool = Pool(pool_size)
+						pool.apply_async(self.saveFile, (pmcid, article, i,))
+				
+				try:	
+					pool.close()
+					pool.join()
+				except ValueError:
+					print('Restarting pool... (2)')
+					pool = Pool(pool_size)
+					pool.close()
+					pool.join()
 								
 	def saveFile(self, pmcid, article, i):
 		# Download and save PDF
