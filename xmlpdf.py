@@ -8,16 +8,17 @@ import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
 import urllib.request
 from multiprocessing.pool import ThreadPool as Pool
+import time
 
 # Main class
 class XMLPDF():
 	'Generate a CSV file of metadata for 1.4 million medical articles, and download the corresponding PDFs'
 	
 	# Vars
-	rootdir = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/toprocess/"
-	output = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/output/"
-	csvpath = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/csv/metadata.csv"
-	errorpath = "/volumes/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/errors/errors.txt"
+	rootdir = "/media/zzalsrd5/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/toprocess/"
+	output = "/media/zzalsrd5/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/output/"
+	csvpath = "/media/zzalsrd5/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/csv/metadata.csv"
+	errorpath = "/media/zzalsrd5/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/errors/errors.txt"
 	
 	def __init__(self):
 		if os.path.exists(self.csvpath):
@@ -30,8 +31,9 @@ class XMLPDF():
 	
 	def processFiles(self):
 		print('Processing files...')
+		print('Start time: ', time.strftime("%c"))
 		
-		pool_size = 300
+		pool_size = 100
 		pool = Pool(pool_size)
 		i = 0
 		
@@ -40,6 +42,7 @@ class XMLPDF():
 			for file in files:
 				# Read file
 				if file.endswith('.xml'):
+					# print('Opening file: ', file)
 					filepath = os.path.join(subdir, file)
 					
 					with open(filepath, 'rb') as f:
@@ -54,22 +57,25 @@ class XMLPDF():
 							#print('Parsing article ID: ', pmcid)
 							i = i+1
 							
-							# Save the data, use multiple threads
+							# Save the data, and use multiple threads
 							try:	
 								pool.apply_async(self.saveFile, (pmcid, article, i,))
 							except ValueError:
 								print('Restarting pool... (1)')
 								pool = Pool(pool_size)
 								pool.apply_async(self.saveFile, (pmcid, article, i,))
+					
+					# Fix for memory leak issue
+					del root
 						
-						try:	
-							pool.close()
-							pool.join()
-						except ValueError:
-							print('Restarting pool... (2)')
-							pool = Pool(pool_size)
-							pool.close()
-							pool.join()
+					try:	
+						pool.close()
+						pool.join()
+					except ValueError:
+						print('Restarting pool... (2)')
+						pool = Pool(pool_size)
+						pool.close()
+						pool.join()
 								
 	def saveFile(self, pmcid, article, i):
 		# Download and save PDF
