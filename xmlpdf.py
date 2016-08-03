@@ -19,21 +19,27 @@ class XMLPDF():
 	output = "/media/zzalsrd5/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/output/"
 	csvpath = "/media/zzalsrd5/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/csv/metadata.csv"
 	errorpath = "/media/zzalsrd5/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/errors/errors.txt"
+	lastxmlfile = "/media/zzalsrd5/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/state/lastxml.txt"
 	
-	def __init__(self):
+	def __init__(self, task):
 		if os.path.exists(self.csvpath):
 			os.remove(self.csvpath)
 			
 		if os.path.exists(self.errorpath):
 			os.remove(self.errorpath)
 		
-		self.processFiles()
+		if task == 'process':
+			self.processFiles()
+		elif task == 'download':
+			self.downloadPDFs()
+		else:
+			print('No task specified, exiting...')
 	
 	def processFiles(self):
 		print('Processing files...')
 		print('Start time: ', time.strftime("%c"))
 		
-		pool_size = 100
+		pool_size = 1000
 		pool = Pool(pool_size)
 		i = 0
 		
@@ -44,6 +50,7 @@ class XMLPDF():
 				if file.endswith('.xml'):
 					# print('Opening file: ', file)
 					filepath = os.path.join(subdir, file)
+					# updateLastXML(self, filename)
 					
 					with open(filepath, 'rb') as f:
 						file_content = f.read()
@@ -59,11 +66,11 @@ class XMLPDF():
 							
 							# Save the data, and use multiple threads
 							try:	
-								pool.apply_async(self.saveFile, (pmcid, article, i,))
+								pool.apply_async(self.saveData, (pmcid, article, i,))
 							except ValueError:
 								print('Restarting pool... (1)')
 								pool = Pool(pool_size)
-								pool.apply_async(self.saveFile, (pmcid, article, i,))
+								pool.apply_async(self.saveData, (pmcid, article, i,))
 					
 					# Fix for memory leak issue
 					del root
@@ -77,16 +84,7 @@ class XMLPDF():
 						pool.close()
 						pool.join()
 								
-	def saveFile(self, pmcid, article, i):
-		# Download and save PDF
-		singleFile = pmcid+'.pdf'
-		
-		try:
-			response = urllib.request.urlretrieve('http://europepmc.org/backend/ptpmcrender.fcgi?accid='+pmcid+'&blobtype=pdf', self.output+singleFile)
-		except urllib.error.HTTPError:
-			errorfile = open(self.errorpath, 'a')
-			errorfile.write(pmcid+'\n')	
-			
+	def saveData(self, pmcid, article, i):	
 		# Get the metadata
 		metadata = self.getMetadata(article, pmcid)
 		
@@ -194,6 +192,67 @@ class XMLPDF():
 				csvLine += '"", '
 			
 		csvLine += '\n'
-		outfile.write(csvLine)	
+		outfile.write(csvLine)
+		outfile.close()
+	
+	def updateLastXML(self, filename):
+		# Save the last opened XML file
+		outfile = open(self.lastxmlfile, 'a')
+		outfile.write(filename)
+		outfile.close()
+	
+	def downloadPDFs(self):
+		### Download all the files extracted from the metadata
+		# Loop through the CSV
+		f = open(self.csvpath)
+		csv = csv.reader(f)
+		i = 0
+		
+		for row in csv:
+			pmcid = row[3]
+			singleFile = pmcid+'.pdf'
+			print('Starting thread for: '+singleFile)
+			
+			pool = Pool(30)
+			pool.apply_async(self.saveFile, (pmcid, i,))
+			pool.close()
+			pool.join()
+			i = i+1
+			
+		f.close()
+			
+		# Then download all the error files
+		# Loop through the error file
+		print('Downloading the error files...')
+		
+		f = open(self.errorpath)
+		csv = csv.reader(f)
+		
+		for row in csv:
+			pmcid = row[0]
+			singleFile = pmcid+'.pdf'
+			
+			pool = Pool(30)
+			pool.apply_async(self.saveFile, (pmcid, i,))
+			pool.close()
+			pool.join()
+			i = i+1
+		
+		f.close()
+	
+	def saveFile(self, pmcid, i):	
+		# Check of the file already exists
+		if os.path.isfile(self.output+singleFile):
+			# File already downloaded
+			print('Already got: '+singleFile)		
+		else:
+			# No file, download it
+			print('Downloading: '+singleFile)	
+			try:
+				response = urllib.request.urlretrieve('http://europepmc.org/backend/ptpmcrender.fcgi?accid='+filename+'&blobtype=pdf', self.output+singleFile)
+			except urllib.error.HTTPError:
+				errorfile = open(self.errorpath, 'a')
+				errorfile.write(pmcid+'\n')
 
-XMLPDF()
+
+XMLPDF('process')
