@@ -4,8 +4,8 @@
 import sys
 import os
 import gzip
-import xml.etree.ElementTree as ET
-from bs4 import BeautifulSoup
+import xml.etree.cElementTree as ET
+from bs4 import BeautifulSoup, SoupStrainer
 import urllib.request
 from multiprocessing.pool import ThreadPool as Pool
 import time
@@ -35,45 +35,42 @@ class XMLPDF():
 		else:
 			print('No task specified, exiting...')
 	
+	#@profile
 	def processFiles(self):
 		print('Processing files...')
 		print('Start time: ', time.strftime("%c"))
 		
 		pool_size = 1000
 		pool = Pool(pool_size)
-		i = 0
 		
 		# Loop through files
 		for subdir, dirs, files in os.walk(self.rootdir):
 			for file in files:
 				# Read file
 				if file.endswith('.xml'):
-					# print('Opening file: ', file)
 					filepath = os.path.join(subdir, file)
-					# updateLastXML(self, filename)
-					
-					with open(filepath, 'rb') as f:
-						file_content = f.read()
-    					
-						# Parse XML
-						root = ET.fromstring(file_content)
-						for child in root:
-							article = BeautifulSoup(ET.tostring(child), 'lxml')
+						
+					for event, element in ET.iterparse(filepath):
+						if element.tag == 'article':
+							strainer = SoupStrainer('article')
+							article = BeautifulSoup(ET.tostring(element), 'lxml', parse_only=strainer)
 							pmcid = 'PMC'+article.find("article-id", {"pub-id-type" : "pmcid"}).getText()
-							
-							#print('Parsing article ID: ', pmcid)
-							i = i+1
-							
+
 							# Save the data, and use multiple threads
-							try:	
-								pool.apply_async(self.saveData, (pmcid, article, i,))
+							try:
+								pool.apply_async(self.saveData, (pmcid, article,))
 							except ValueError:
 								print('Restarting pool... (1)')
 								pool = Pool(pool_size)
-								pool.apply_async(self.saveData, (pmcid, article, i,))
-					
+								pool.apply_async(self.saveData, (pmcid, article,))
+							
+							print('.', end="", flush=True)
+							
+							element.clear()
+						
 					# Fix for memory leak issue
-					del root
+					del element
+					del article
 						
 					try:	
 						pool.close()
@@ -84,12 +81,12 @@ class XMLPDF():
 						pool.close()
 						pool.join()
 								
-	def saveData(self, pmcid, article, i):	
+	def saveData(self, pmcid, article):	
 		# Get the metadata
 		metadata = self.getMetadata(article, pmcid)
 		
 		# Save metadata to CSV file
-		self.updateCSV(metadata, i)
+		self.updateCSV(metadata)
 	
 	def getMetadata(self, article, pmcid):
 		try:
@@ -177,10 +174,8 @@ class XMLPDF():
 		
 		return metadata
 	
-	def updateCSV(self, metadata, i):
+	def updateCSV(self, metadata):
 		# Write the data to the CSV file. This will be used to populate a database
-		print('Writing data for entry number:', i)
-		
 		outfile = open(self.csvpath, 'a')
 		csvLine = ''
 		for key, value in metadata.items():
@@ -206,7 +201,6 @@ class XMLPDF():
 		# Loop through the CSV
 		f = open(self.csvpath)
 		csv = csv.reader(f)
-		i = 0
 		
 		for row in csv:
 			pmcid = row[3]
@@ -214,10 +208,9 @@ class XMLPDF():
 			print('Starting thread for: '+singleFile)
 			
 			pool = Pool(30)
-			pool.apply_async(self.saveFile, (pmcid, i,))
+			pool.apply_async(self.saveFile, (pmcid,))
 			pool.close()
 			pool.join()
-			i = i+1
 			
 		f.close()
 			
@@ -233,14 +226,13 @@ class XMLPDF():
 			singleFile = pmcid+'.pdf'
 			
 			pool = Pool(30)
-			pool.apply_async(self.saveFile, (pmcid, i,))
+			pool.apply_async(self.saveFile, (pmcid,))
 			pool.close()
 			pool.join()
-			i = i+1
 		
 		f.close()
 	
-	def saveFile(self, pmcid, i):	
+	def saveFile(self, pmcid):	
 		# Check of the file already exists
 		if os.path.isfile(self.output+singleFile):
 			# File already downloaded
