@@ -38,6 +38,7 @@ class XMLPDF():
 	#@profile
 	def processFiles(self):
 		print('Processing files...')
+		startTime = time.strftime("%c")
 		print('Start time: ', time.strftime("%c"))
 		
 		pool_size = 1000
@@ -80,6 +81,8 @@ class XMLPDF():
 						pool = Pool(pool_size)
 						pool.close()
 						pool.join()
+						
+		print('Processing finished: start {} end {}'.format(startTime, time.strftime("%c")))
 								
 	def saveData(self, pmcid, article):	
 		# Get the metadata
@@ -198,6 +201,7 @@ class XMLPDF():
 	
 	def downloadPDFs(self):
 		### Download all the files extracted from the metadata
+		startTime = time.strftime("%c")
 		# Loop through the CSV
 		f = open(self.csvpath)
 		csv = csv.reader(f)
@@ -231,6 +235,8 @@ class XMLPDF():
 			pool.join()
 		
 		f.close()
+		
+		print('Finished downloading all files: start {} end {}.'.format(startTime, time.strftime("%c")))
 	
 	def saveFile(self, pmcid):	
 		# Check of the file already exists
