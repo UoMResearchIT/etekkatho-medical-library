@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup, SoupStrainer
 import urllib.request
 from multiprocessing.pool import ThreadPool as Pool
 import time
+import csv
 
 # Main class
 class XMLPDF():
@@ -22,14 +23,18 @@ class XMLPDF():
 	lastxmlfile = "/media/zzalsrd5/Seagate Backup Plus Drive/uom/et_pubmed/europepmc.org/ftp/state/lastxml.txt"
 	
 	def __init__(self, task):
-		if os.path.exists(self.csvpath):
-			os.remove(self.csvpath)
-			
-		if os.path.exists(self.errorpath):
-			os.remove(self.errorpath)
-		
 		if task == 'process':
+			if os.path.exists(self.csvpath):
+				# First remove the old file
+				os.remove(self.csvpath)
+				
+				# Create a new one with the header line
+				outfile = open(self.csvpath, 'w')
+				outfile.write('pmcid,filename,journal-id-type,journal-id,article-type,journal-title,issn-ppub,issn-epub,publisher-name,publisher-location,article-title,authors,affiliation\n')
+				outfile.close()
+			
 			self.processFiles()
+			
 		elif task == 'download':
 			self.downloadPDFs()
 		else:
@@ -143,8 +148,9 @@ class XMLPDF():
 			authors = ''
 			
 			for author in article.findAll("surname"):
-				authors += author.text+', '
+				authors += author.text+','
 				author.next_sibling	
+				
 		except AttributeError:
 			authors = 'n/a'
 		
@@ -152,46 +158,39 @@ class XMLPDF():
 			affiliation = ''
 			
 			for aff in article.findAll("aff"):
-				affiliation += aff.text+', '
-				aff.next_sibling	
+				affiliation += aff.text+','
+				aff.next_sibling
+				
 		except AttributeError:
 			affiliation = 'n/a'
 		
 		singleFile = pmcid+'.pdf'
+		authors = authors.rstrip(',')
+		affiliation = affiliation.rstrip(',')	
 		
-		metadata = {
-			'pmcid': pmcid,
-			'filename': singleFile,
-			'journal-id-type': journalIDType,
-			'journal-id': journalID,
-			'article-type': articleType,
-			'journal-title': journalTitle,
-			'issn-ppub': issnppub,
-			'issn-epub': issnepub,
-			'publisher-name': pubname,
-			'publisher-location': publoc,
-			'article-title': articleTitle,
-			'authors': authors,
-			'affiliation': affiliation
-		}
+		metadata = [
+			pmcid,
+			singleFile,
+			journalIDType,
+			journalID,
+			articleType,
+			journalTitle,
+			issnppub,
+			issnepub,
+			pubname,
+			publoc,
+			articleTitle,
+			authors,
+			affiliation
+		]
 		
 		return metadata
 	
 	def updateCSV(self, metadata):
-		# Write the data to the CSV file. This will be used to populate a database
-		outfile = open(self.csvpath, 'a')
-		csvLine = ''
-		for key, value in metadata.items():
-			#print('Adding:', key, value)
-			
-			if value:
-				csvLine += '"'+value+'", '
-			else:
-				csvLine += '"", '
-			
-		csvLine += '\n'
-		outfile.write(csvLine)
-		outfile.close()
+		# Write the data to the CSV file. This will be used to update the solr index	
+		with open(self.csvpath, "a") as fp:
+			wr = csv.writer(fp, dialect='excel', lineterminator = '\n')
+			wr.writerow(metadata)
 	
 	def updateLastXML(self, filename):
 		# Save the last opened XML file
@@ -204,42 +203,30 @@ class XMLPDF():
 		startTime = time.strftime("%c")
 		# Loop through the CSV
 		f = open(self.csvpath)
-		csv = csv.reader(f)
+		metadata = csv.reader(f, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True)
 		
-		for row in csv:
-			pmcid = row[3]
-			singleFile = pmcid+'.pdf'
-			print('Starting thread for: '+singleFile)
+		for row in metadata:
+			pmcid = row[8]
 			
-			pool = Pool(30)
-			pool.apply_async(self.saveFile, (pmcid,))
-			pool.close()
-			pool.join()
+			### Check the input is a PMC ID
+			if 'PMC' in pmcid:
+				print('Starting thread for: '+pmcid)
+				
+				pool = Pool(30)
+				pool.apply_async(self.saveFile, (pmcid,))
+				pool.close()
+				pool.join()
+			else:
+				print('Something is wrong. '+pmcid+' is not a PMC id')
+				sys.exit(0)
 			
-		f.close()
-			
-		# Then download all the error files
-		# Loop through the error file
-		print('Downloading the error files...')
-		
-		f = open(self.errorpath)
-		csv = csv.reader(f)
-		
-		for row in csv:
-			pmcid = row[0]
-			singleFile = pmcid+'.pdf'
-			
-			pool = Pool(30)
-			pool.apply_async(self.saveFile, (pmcid,))
-			pool.close()
-			pool.join()
-		
 		f.close()
 		
 		print('Finished downloading all files: start {} end {}.'.format(startTime, time.strftime("%c")))
 	
 	def saveFile(self, pmcid):	
 		# Check of the file already exists
+		singleFile = pmcid+'.pdf'
 		if os.path.isfile(self.output+singleFile):
 			# File already downloaded
 			print('Already got: '+singleFile)		
@@ -247,7 +234,7 @@ class XMLPDF():
 			# No file, download it
 			print('Downloading: '+singleFile)	
 			try:
-				response = urllib.request.urlretrieve('http://europepmc.org/backend/ptpmcrender.fcgi?accid='+filename+'&blobtype=pdf', self.output+singleFile)
+				response = urllib.request.urlretrieve('http://europepmc.org/backend/ptpmcrender.fcgi?accid='+pmcid+'&blobtype=pdf', self.output+singleFile)
 			except urllib.error.HTTPError:
 				errorfile = open(self.errorpath, 'a')
 				errorfile.write(pmcid+'\n')
