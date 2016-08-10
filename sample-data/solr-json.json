@@ -1,0 +1,420 @@
+{
+   "responseHeader":{
+      "status":0,
+      "QTime":0,
+      "params":{
+         "q":"test sdfsdf",
+         "debug":"query"
+      }
+   },
+   "response":{
+      "numFound":252,
+      "start":0,
+      "docs":[
+         {
+            "pmcid":[
+               "PMC1242090"
+            ],
+            "filename":[
+               "PMC1242090.pdf"
+            ],
+            "journal-id-type":[
+               "nlm-ta"
+            ],
+            "journal-id":[
+               "Environ Health Perspect"
+            ],
+            "article-type":[
+               "research-article"
+            ],
+            "journal-title":[
+               "Environmental Health Perspectives"
+            ],
+            "issn-ppub":[
+               "0091-6765"
+            ],
+            "issn-epub":[
+               "n/a"
+            ],
+            "publisher-name":[
+               "n/a"
+            ],
+            "publisher-location":[
+               "n/a"
+            ],
+            "article-title":[
+               "Putting people to the test."
+            ],
+            "authors":[
+               "Weinhold"
+            ],
+            "id":"1a4e91ad-0316-4e3d-8eda-648b95d40015",
+            "_version_":1542127933628350464
+         },
+         {
+            "pmcid":[
+               "PMC519005"
+            ],
+            "filename":[
+               "PMC519005.pdf"
+            ],
+            "journal-id-type":[
+               "nlm-ta"
+            ],
+            "journal-id":[
+               "PLoS Biol"
+            ],
+            "article-type":[
+               "research-article"
+            ],
+            "journal-title":[
+               "PLoS Biology"
+            ],
+            "issn-ppub":[
+               "1544-9173"
+            ],
+            "issn-epub":[
+               "1545-7885"
+            ],
+            "publisher-name":[
+               "Public Library of Science"
+            ],
+            "publisher-location":[
+               "San Francisco, USA"
+            ],
+            "article-title":[
+               "A Test Case for DNA Barcodes to Identify Species"
+            ],
+            "id":"a949f186-7ce5-4a0e-a812-bfb53f0a4629",
+            "_version_":1542127940987256834
+         },
+         {
+            "pmcid":[
+               "PMC1474542"
+            ],
+            "filename":[
+               "PMC1474542.pdf"
+            ],
+            "journal-id-type":[
+               "nlm-ta"
+            ],
+            "journal-id":[
+               "Environ Health Perspect"
+            ],
+            "article-type":[
+               "review-article"
+            ],
+            "journal-title":[
+               "Environmental Health Perspectives"
+            ],
+            "issn-ppub":[
+               "0091-6765"
+            ],
+            "issn-epub":[
+               "n/a"
+            ],
+            "publisher-name":[
+               "n/a"
+            ],
+            "publisher-location":[
+               "n/a"
+            ],
+            "article-title":[
+               "Comparative biology of test species."
+            ],
+            "authors":[
+               "Calabrese"
+            ],
+            "affiliation":[
+               "Toxicology Program, University of Massachusetts, Amherst 01003."
+            ],
+            "id":"7aa61f4b-45c3-469a-b329-3c4af9619700",
+            "_version_":1542127946733453319
+         },
+         {
+            "pmcid":[
+               "PMC1475307"
+            ],
+            "filename":[
+               "PMC1475307.pdf"
+            ],
+            "journal-id-type":[
+               "nlm-ta"
+            ],
+            "journal-id":[
+               "Environ Health Perspect"
+            ],
+            "article-type":[
+               "research-article"
+            ],
+            "journal-title":[
+               "Environmental Health Perspectives"
+            ],
+            "issn-ppub":[
+               "0091-6765"
+            ],
+            "issn-epub":[
+               "n/a"
+            ],
+            "publisher-name":[
+               "n/a"
+            ],
+            "publisher-location":[
+               "n/a"
+            ],
+            "article-title":[
+               "Predictiveness and limitations of test methods in teratology: overview."
+            ],
+            "authors":[
+               "Staples"
+            ],
+            "id":"1e078bb2-77bd-4060-bf77-e2b3f32156fc",
+            "_version_":1542127946827825152
+         },
+         {
+            "pmcid":[
+               "PMC1475312"
+            ],
+            "filename":[
+               "PMC1475312.pdf"
+            ],
+            "journal-id-type":[
+               "nlm-ta"
+            ],
+            "journal-id":[
+               "Environ Health Perspect"
+            ],
+            "article-type":[
+               "research-article"
+            ],
+            "journal-title":[
+               "Environmental Health Perspectives"
+            ],
+            "issn-ppub":[
+               "0091-6765"
+            ],
+            "issn-epub":[
+               "n/a"
+            ],
+            "publisher-name":[
+               "n/a"
+            ],
+            "publisher-location":[
+               "n/a"
+            ],
+            "article-title":[
+               "Assessment of current test procedures."
+            ],
+            "authors":[
+               "Palmer"
+            ],
+            "id":"2d3534ba-aff9-46b4-8f9e-9d85da5a7b7d",
+            "_version_":1542127946827825157
+         },
+         {
+            "pmcid":[
+               "PMC1475546"
+            ],
+            "filename":[
+               "PMC1475546.pdf"
+            ],
+            "journal-id-type":[
+               "nlm-ta"
+            ],
+            "journal-id":[
+               "Environ Health Perspect"
+            ],
+            "article-type":[
+               "research-article"
+            ],
+            "journal-title":[
+               "Environmental Health Perspectives"
+            ],
+            "issn-ppub":[
+               "0091-6765"
+            ],
+            "issn-epub":[
+               "n/a"
+            ],
+            "publisher-name":[
+               "n/a"
+            ],
+            "publisher-location":[
+               "n/a"
+            ],
+            "article-title":[
+               "Note on Drosophila as a mutagenicity test system."
+            ],
+            "authors":[
+               "Zimmering"
+            ],
+            "id":"77f4f2ad-6264-40d2-8c7c-5973b1824bcf",
+            "_version_":1542127946868719619
+         },
+         {
+            "pmcid":[
+               "PMC1475553"
+            ],
+            "filename":[
+               "PMC1475553.pdf"
+            ],
+            "journal-id-type":[
+               "nlm-ta"
+            ],
+            "journal-id":[
+               "Environ Health Perspect"
+            ],
+            "article-type":[
+               "research-article"
+            ],
+            "journal-title":[
+               "Environmental Health Perspectives"
+            ],
+            "issn-ppub":[
+               "0091-6765"
+            ],
+            "issn-epub":[
+               "n/a"
+            ],
+            "publisher-name":[
+               "n/a"
+            ],
+            "publisher-location":[
+               "n/a"
+            ],
+            "article-title":[
+               "The micronucleus test as an in vivo cytogenetic method."
+            ],
+            "authors":[
+               "Miller"
+            ],
+            "id":"a0587065-670e-4a44-a43a-9de380ffd103",
+            "_version_":1542127946868719626
+         },
+         {
+            "pmcid":[
+               "PMC1480482"
+            ],
+            "filename":[
+               "PMC1480482.pdf"
+            ],
+            "journal-id-type":[
+               "nlm-ta"
+            ],
+            "journal-id":[
+               "Environ Health Perspect"
+            ],
+            "article-type":[
+               "news"
+            ],
+            "journal-title":[
+               "Environmental Health Perspectives"
+            ],
+            "issn-ppub":[
+               "0091-6765"
+            ],
+            "issn-epub":[
+               "1552-9924"
+            ],
+            "publisher-name":[
+               "National Institute of Environmental Health Sciences"
+            ],
+            "publisher-location":[
+               "n/a"
+            ],
+            "article-title":[
+               "Herbal Medicine: High-Test Mothers’ Milk"
+            ],
+            "authors":[
+               "Washam"
+            ],
+            "id":"17bef494-3f5c-44d4-b21e-e3d5afb9d7ab",
+            "_version_":1542127947113037825
+         },
+         {
+            "pmcid":[
+               "PMC1242090"
+            ],
+            "filename":[
+               "PMC1242090.pdf"
+            ],
+            "journal-id-type":[
+               "nlm-ta"
+            ],
+            "journal-id":[
+               "Environ Health Perspect"
+            ],
+            "article-type":[
+               "research-article"
+            ],
+            "journal-title":[
+               "Environmental Health Perspectives"
+            ],
+            "issn-ppub":[
+               "0091-6765"
+            ],
+            "issn-epub":[
+               "n/a"
+            ],
+            "publisher-name":[
+               "n/a"
+            ],
+            "publisher-location":[
+               "n/a"
+            ],
+            "article-title":[
+               "Putting people to the test."
+            ],
+            "authors":[
+               "Weinhold"
+            ],
+            "id":"b205fb9b-cb7e-484f-ac34-4a5c87a60802",
+            "_version_":1542128111739469828
+         },
+         {
+            "pmcid":[
+               "PMC519005"
+            ],
+            "filename":[
+               "PMC519005.pdf"
+            ],
+            "journal-id-type":[
+               "nlm-ta"
+            ],
+            "journal-id":[
+               "PLoS Biol"
+            ],
+            "article-type":[
+               "research-article"
+            ],
+            "journal-title":[
+               "PLoS Biology"
+            ],
+            "issn-ppub":[
+               "1544-9173"
+            ],
+            "issn-epub":[
+               "1545-7885"
+            ],
+            "publisher-name":[
+               "Public Library of Science"
+            ],
+            "publisher-location":[
+               "San Francisco, USA"
+            ],
+            "article-title":[
+               "A Test Case for DNA Barcodes to Identify Species"
+            ],
+            "id":"9c5a02ad-91bb-4b57-a956-a2e1683dbf79",
+            "_version_":1542128117121810434
+         }
+      ]
+   },
+   "debug":{
+      "rawquerystring":"test sdfsdf",
+      "querystring":"test sdfsdf",
+      "parsedquery":"_text_:test _text_:sdfsdf",
+      "parsedquery_toString":"_text_:test _text_:sdfsdf",
+      "QParser":"LuceneQParser"
+   }
+}

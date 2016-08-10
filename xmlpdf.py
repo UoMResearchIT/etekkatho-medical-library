@@ -163,6 +163,18 @@ class XMLPDF():
 				
 		except AttributeError:
 			affiliation = 'n/a'
+			
+		try:
+			pubdate = article.find('year').getText()
+			
+		except AttributeError:
+			pubdate = 'n/a'
+			
+		try:
+			abstract = article.find("abstract").getText()
+				
+		except AttributeError:
+			abstract = 'n/a'
 		
 		singleFile = pmcid+'.pdf'
 		authors = authors.rstrip(',')
@@ -181,7 +193,9 @@ class XMLPDF():
 			publoc,
 			articleTitle,
 			authors,
-			affiliation
+			affiliation,
+			pubdate,
+			abstract
 		]
 		
 		return metadata
