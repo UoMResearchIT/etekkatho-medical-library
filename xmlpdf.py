@@ -30,7 +30,7 @@ class XMLPDF():
 				
 				# Create a new one with the header line
 				outfile = open(self.csvpath, 'w')
-				outfile.write('pmcid,filename,journal-id-type,journal-id,article-type,journal-title,issn-ppub,issn-epub,publisher-name,publisher-location,article-title,authors,affiliation\n')
+				outfile.write('pmcid,filename,journal-id-type,journal-id,article-type,journal-title,issn-ppub,issn-epub,publisher-name,publisher-location,article-title,authors,affiliation,year,abstract\n')
 				outfile.close()
 			
 			self.processFiles()
